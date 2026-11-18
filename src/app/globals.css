@@ -1,26 +1,831 @@
 @import "tailwindcss";
 
+/*
+ * Tokens do DESIGN.md na raiz do projeto: a sala de projeção. Não invente tokens aqui.
+ * As durações e as curvas não ficam neste arquivo: elas vêm de src/motion/tokens.ts,
+ * que escreve as variáveis --dur-* e --ease-* no documento (ver src/app/layout.tsx).
+ * Espaçamento em múltiplos de 4px.
+ */
+@theme {
+  /* Superfícies da sala */
+  --color-screen: oklch(0 0 0);
+  --color-room-1: oklch(0.205 0.008 275);
+  --color-room-2: oklch(0.245 0.008 275);
+  --color-room-3: oklch(0.17 0.008 275);
+
+  /* A luz, levemente quente */
+  --color-light: oklch(0.97 0.006 85);
+  --color-light-dim: oklch(0.79 0.008 85);
+  --color-light-faint: oklch(0.66 0.008 85);
+
+  /* Destaque: âmbar do projetor. O valor real vem do pôster em foco, em --accent. */
+  --color-accent: oklch(0.8 0.14 75);
+  --color-accent-ink: oklch(0.14 0.02 75);
+
+  --color-hairline: oklch(1 0 0 / 0.14);
+  --color-ink: oklch(0.17 0 0);
+
+  /* Fontes: didone de alto contraste nos títulos, geométrica na interface */
+  --font-display: var(--font-bodoni), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-jost), system-ui, -apple-system, sans-serif;
+
+  /* Escala modular. Os passos de display são fluidos: não precisam de variante por breakpoint. */
+  --text-hero: clamp(3rem, 9.5vw, 8.25rem);
+  --text-hero--line-height: 0.9;
+  --text-hero--letter-spacing: -0.02em;
+  --text-display-lg: clamp(2.25rem, 5vw, 4rem);
+  --text-display-lg--line-height: 0.98;
+  --text-display-lg--letter-spacing: -0.015em;
+  --text-display-md: clamp(1.75rem, 3.4vw, 2.5rem);
+  --text-display-md--line-height: 1.06;
+  --text-display-md--letter-spacing: -0.01em;
+  --text-display-sm: clamp(1.375rem, 2.4vw, 1.75rem);
+  --text-display-sm--line-height: 1.14;
+  --text-display-sm--letter-spacing: -0.01em;
+  --text-tagline: 1.3125rem;
+  --text-tagline--line-height: 1.2;
+  --text-lead: clamp(1.1875rem, 1.6vw, 1.5rem);
+  --text-lead--line-height: 1.45;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.5;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.16em;
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.45;
+  --text-fine: 0.75rem;
+  --text-fine--line-height: 1.35;
+  --text-fine--letter-spacing: 0.01em;
+
+  /* Raios. A sala é retangular: o raio é discreto em tudo, menos na pílula de ação. */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-poster: 6px;
+  --radius-md: 8px;
+  --radius-pill: 9999px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --wrap: min(100% - 2 * var(--gut), 1280px);
+  --gut: 24px;
+  --nav-h: 76px;
+}
+@media (min-width: 640px) {
+  :root { --gut: 48px; }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html {
+  background: var(--color-screen);
+  scroll-padding-top: var(--nav-h);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+h1, h2, h3 { text-wrap: balance; }
+
+body {
+  background: var(--color-screen);
+  color: var(--color-light);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * A didone só funciona grande: nunca abaixo do passo tagline.
+ *
+ * O eixo de tamanho óptico (opsz) troca o desenho da letra: valor alto = fios finíssimos
+ * (cartaz), valor baixo = fios firmes (texto). O automático usa o tamanho em px, e isso é fino
+ * demais num fundo escuro: num título de 30 px o hífen, que na didone é um fio, some.
+ * Por isso cada passo da escala tem o seu valor, sempre mais firme que o automático até o
+ * título grande, onde o fio fino é justamente o que se quer.
+ */
+.font-display { font-optical-sizing: none; font-variation-settings: "opsz" var(--opsz, 24); }
+.text-hero { --opsz: 96; }
+.text-display-lg { --opsz: 60; }
+.text-display-md { --opsz: 24; }
+.text-display-sm { --opsz: 14; }
+.text-tagline { --opsz: 11; }
+
+.wrap {
+  width: var(--wrap);
+  margin-inline: auto;
+}
+
+/* Foco visível: anel de 2px na cor de destaque, a 4px do elemento. */
+:focus-visible {
+  outline: 2px solid var(--accent, var(--color-accent));
+  outline-offset: 4px;
+}
+
+@layer components {
+/* Pílula de ação */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body);
+  line-height: 1;
+  transition: transform var(--dur-short) var(--ease-emphasis),
+    background-color var(--dur-short) var(--ease-emphasis);
+  touch-action: manipulation;
+}
+.btn:active { transform: scale(0.95); }
+.btn--primary { background: var(--accent, var(--color-accent)); color: var(--color-accent-ink); font-weight: 500; }
+.btn--ghost { color: var(--accent, var(--color-accent)); box-shadow: inset 0 0 0 1px currentColor; }
+.btn--quiet { background: var(--color-room-2); color: var(--color-light); box-shadow: inset 0 0 0 1px var(--color-hairline); }
+/* O hover aumenta o contraste: a luz sobe, o contorno ganha fundo. */
+@media (hover: hover) {
+  .btn--primary:hover { background: color-mix(in oklch, var(--accent, var(--color-accent)) 88%, white); }
+  .btn--ghost:hover { background: color-mix(in oklch, var(--accent, var(--color-accent)) 16%, transparent); }
+  .btn--quiet:hover { background: color-mix(in oklch, var(--color-room-2) 70%, white); }
+}
+
+/* Link na sala escura */
+.link {
+  color: var(--accent, var(--color-accent));
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--dur-short) var(--ease-emphasis);
+}
+@media (hover: hover) {
+  .link:hover { text-decoration-color: currentColor; }
+}
+
+/* O quadro do pôster: placa fina, contorno de 1px, sem sombra. */
+.poster-frame {
+  border-radius: var(--radius-poster);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+  background: var(--color-room-3);
+}
+
+/* Cartão de pôster: sobe 2px e a imagem aproxima 1.03 dentro do quadro. */
+.poster-card { transition: transform var(--dur-medium) var(--ease-enter); }
+.poster-card .poster-frame img { transition: transform var(--dur-long) var(--ease-enter); }
+@media (hover: hover) {
+  .poster-card:hover { transform: translateY(-2px); }
+  .poster-card:hover .poster-frame img { transform: scale(1.03); }
+}
+}
+
+/*
+ * Cabeçalho: uma pílula flutuante sobre a cena, sólida e com contorno de 1 px. Sem vidro fosco
+ * e sem sombra (DESIGN.md): o que separa a pílula da cena é a superfície `room-1` e o contorno.
+ * O wrapper não pega clique, então a cena inteira continua clicável em volta da pílula.
+ */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  /* O entalhe do celular não pode comer a marca nem os links do topo. */
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(var(--gut), env(safe-area-inset-right, 0px)) 0 max(var(--gut), env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+/* Sem o atraso de toque duplo nos links e botões do cabeçalho */
+.site-header :is(a, button) { touch-action: manipulation; }
+/* Mesma largura da coluna de conteúdo (1280): a borda da pílula alinha com a do texto da página. */
+.site-bar { position: relative; width: min(100%, 1280px); }
+
+.site-nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 52px;
+  padding: 0 4px 0 16px;
+  pointer-events: auto;
+  border-radius: var(--radius-pill);
+  background: var(--color-room-1);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+
+/* A marca: o mostrador do carregamento, em miniatura */
+.site-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--color-light);
+}
+.site-logo__word {
+  font-family: var(--font-display);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: var(--text-tagline);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+.site-mark { width: 28px; height: 28px; fill: none; stroke: color-mix(in oklch, var(--color-light) 55%, transparent); stroke-width: 1.4; }
+.site-mark__arm { transform: rotate(135deg); transform-origin: 16px 16px; transition: transform var(--dur-long) var(--ease-emphasis); }
+.site-mark__arm path { stroke: var(--accent, var(--color-accent)); stroke-width: 1.6; stroke-linecap: round; }
+.site-mark__arm circle { fill: var(--accent, var(--color-accent)); stroke: none; }
+@media (hover: hover) {
+  .site-logo:hover .site-mark__arm { transform: rotate(495deg); }
+}
+
+/* Os links: a cena atual leva o sublinhado na cor do pôster em foco */
+.site-links { display: none; flex: 1; justify-content: center; }
+.site-links ul { display: flex; align-items: center; gap: 4px; }
+.site-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: var(--text-caption);
+  line-height: 1;
+  color: var(--color-light-dim);
+  white-space: nowrap;
+  transition: color var(--dur-short) var(--ease-emphasis);
+}
+.site-link::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  left: 14px;
+  height: 1px;
+  background: var(--accent, var(--color-accent));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-medium) var(--ease-enter);
+}
+.site-link[aria-current="location"] { color: var(--color-light); }
+.site-link[aria-current="location"]::after { transform: scaleX(1); }
+@media (hover: hover) {
+  .site-link:hover { color: var(--color-light); }
+}
+
+.site-tools { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+
+/*
+ * A linha do tempo: o quanto da página já passou. O recorte nas pontas da pílula fica só aqui,
+ * e não na pílula: o `overflow: hidden` da pílula cortaria o anel de foco dos links.
+ */
+.site-progress-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.site-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent, var(--color-accent));
+  transform: scaleX(var(--p, 0));
+  transform-origin: left;
+}
+
+/* Botão do menu: só no celular */
+.site-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  line-height: 1;
+  color: var(--color-light);
+  background: var(--color-room-2);
+  touch-action: manipulation;
+  transition: transform var(--dur-short) var(--ease-emphasis);
+}
+.site-menu-btn:active { transform: scale(0.95); }
+.site-menu-btn svg { transition: transform var(--dur-medium) var(--ease-emphasis); }
+.site-menu-btn svg[data-open="true"] { transform: rotate(180deg); }
+
+.site-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-room-1);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  /* Sai mais rápido do que entra */
+  transition: opacity var(--dur-short) var(--ease-exit), transform var(--dur-short) var(--ease-exit), visibility 0s linear var(--dur-short);
+}
+.site-menu[data-open="true"] {
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition: opacity var(--dur-medium) var(--ease-enter), transform var(--dur-medium) var(--ease-enter), visibility 0s;
+}
+.site-menu__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body);
+  color: var(--color-light-dim);
+}
+.site-menu__link[aria-current="location"] { color: var(--color-light); background: var(--color-room-2); }
+.site-menu__link[aria-current="location"]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, var(--color-accent));
+}
+
+@media (min-width: 768px) {
+  .site-links { display: flex; }
+  .site-menu-btn, .site-menu { display: none; }
+}
+
+/*
+ * Véu de legibilidade da abertura. Não é decoração: é o que garante o contraste AA do texto
+ * sobre o fundo do filme, que é uma imagem clara e imprevisível. Só preto a transparente.
+ * No celular o texto fica embaixo; no desktop, à esquerda.
+ */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--color-screen) 12%, rgb(0 0 0 / 0.55) 48%, transparent 82%);
+  /*
+   * O véu acaba junto com a seção. Sem a máscara, a borda de baixo dele aparece como uma
+   * linha dura quando a pessoa rola: o que está acima dela fica escuro e o que está abaixo, não.
+   * A máscara dissolve o véu nos últimos 35 % da seção, então não existe borda.
+   */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+@media (min-width: 1024px) {
+  .hero-scrim {
+    background: linear-gradient(to right, var(--color-screen) 0%, rgb(0 0 0 / 0.72) 38%, transparent 68%);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Cadeiras do SVG (SeatRow): as classes ficam aqui para não se repetirem em cada instância. */
+.seat-part { fill: var(--color-room-1); stroke: var(--color-hairline); stroke-width: 1; }
+.seat-part--lift { fill: var(--color-room-2); }
+
+/*
+ * Créditos: o final da sessão. Sem JavaScript, ou com movimento reduzido, é um bloco estático:
+ * "Fim", a lista de créditos e a plateia, um embaixo do outro. Com JavaScript o componente liga
+ * `.is-scrub` e vira a cena: um cartaz fixo de 100 svh, 300 svh de rolagem, os créditos subindo
+ * conforme a pessoa rola e a plateia aparecendo no fim.
+ */
+.credits { position: relative; z-index: 10; background: var(--color-screen); }
+.credits__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 88px;
+  padding: 128px var(--gut) 72px;
+  text-align: center;
+}
+.credits__fim {
+  font-family: var(--font-display);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 96;
+  font-size: var(--text-hero);
+  font-weight: 600;
+  line-height: var(--text-hero--line-height);
+  letter-spacing: var(--text-hero--letter-spacing);
+  color: var(--color-light);
+}
+.credits__window { width: min(100%, 680px); }
+.credits__roll { display: grid; gap: 56px; margin: 0; }
+.credit { display: grid; gap: 12px; }
+.credit__role {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  letter-spacing: var(--text-label--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-light-faint);
+}
+.credit__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 14;
+  font-size: var(--text-display-sm);
+  font-weight: 600;
+  line-height: var(--text-display-sm--line-height);
+  letter-spacing: var(--text-display-sm--letter-spacing);
+  color: var(--color-light);
+  text-wrap: balance;
+}
+
+.credits__end { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+.credits__seats { display: block; width: 100%; max-width: 760px; height: clamp(72px, 12vw, 112px); margin-bottom: 8px; }
+.credits__over {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  letter-spacing: var(--text-label--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-light-faint);
+}
+.credits__tmdb { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; }
+.credits__legal { max-width: 62ch; font-size: var(--text-caption); line-height: var(--text-caption--line-height); color: var(--color-light-dim); }
+.credits__year { font-size: var(--text-fine); line-height: var(--text-fine--line-height); color: var(--color-light-faint); }
+
+/* A cena: cartaz fixo, e a rolagem comanda a subida dos créditos */
+.credits.is-scrub { height: 300svh; }
+.credits.is-scrub .credits__inner {
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 100svh;
+  padding: 0;
+  overflow: hidden;
+}
+.credits.is-scrub .credits__fim {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+/* A janela recorta e suaviza os créditos nas pontas; quem sobe é o `.credits__roll`. */
+.credits.is-scrub .credits__window {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--gut);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+}
+.credits.is-scrub .credits__roll { width: min(100%, 680px); align-self: flex-start; }
+.credits.is-scrub .credits__end {
+  position: absolute;
+  right: 0;
+  bottom: clamp(24px, 6svh, 56px);
+  left: 0;
+  padding: 0 var(--gut);
+}
+
+/*
+ * Letras que entram uma a uma (componente Letters). Só CSS, e o estado de repouso é VISÍVEL: a
+ * animação tem preenchimento `both`, então sem JavaScript, ou se a animação não rodar, a letra
+ * está na tela. O atraso de cada letra é o índice dela vezes `--letter-stagger`, travado em 24
+ * para um título longo não levar 1 s.
+ *
+ * Enquanto a tela de carregamento está na frente, o script do <head> liga data-letters="wait" e
+ * as letras do site esperam; quando ela sai, o controlador tira o atributo e a entrada começa.
+ */
+.wd { display: inline-block; white-space: nowrap; }
+.ch { display: inline-block; transform-origin: 0 100%; }
+.letters .ch {
+  animation: letter-in var(--dur-long) var(--ease-enter) both;
+  animation-delay: calc(min(var(--c), 24) * var(--letter-stagger));
+}
+html[data-letters="wait"] .letters:not(.letters--now) .ch {
+  opacity: 0;
+  /* Rede de segurança: se o controlador nunca rodar, as letras aparecem sozinhas. */
+  animation: letter-failsafe 1ms linear var(--preroll-failsafe) both;
+}
+@keyframes letter-in {
+  from { opacity: 0; transform: translateY(0.4em) rotate(3deg); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes letter-failsafe { to { opacity: 1; transform: none; } }
+
+/*
+ * Tela de carregamento: a película. O servidor sempre manda o HTML; só o script do <head> a liga
+ * (data-preroll="on"), 1 vez por sessão e nunca com movimento reduzido. Sem JavaScript ela nunca
+ * aparece.
+ */
+.preroll { display: none; }
+html[data-preroll="on"] {
+  overflow: hidden;
+  /* Rede de segurança: se o controlador não rodar, a rolagem volta sozinha. */
+  animation: preroll-unlock 1ms linear var(--preroll-failsafe) forwards;
+}
+html[data-preroll="on"] .preroll {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--color-screen);
+  transition: opacity var(--dur-long) var(--ease-exit);
+  animation: preroll-failsafe 1ms linear var(--preroll-failsafe) forwards;
+}
+@keyframes preroll-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@keyframes preroll-unlock { to { overflow: visible; } }
+
+.preroll[data-state="leaving"] { opacity: 0; pointer-events: none; }
+
+.preroll__stage {
+  /* Medidas da película. A janela do projetor fica a 42 % da altura, centrada. */
+  --fw: min(27vmin, 220px);
+  --fh: calc(var(--fw) * 1.5);
+  --gap: 14px;
+  --pitch: calc(var(--fw) + var(--gap));
+  --pad: 60vw;
+  --band: 30px;
+  --cy: 42%;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+@media (max-width: 639px) { .preroll__stage { --fw: min(48vw, 200px); } }
+
+/* Grão: o ruído muda 24 vezes por segundo (12 posições em 500 ms), como o grão do filme. */
+.preroll__stage::after {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: preroll-grain 500ms steps(1) infinite;
+}
+@keyframes preroll-grain {
+  0% { transform: translate(0, 0); }
+  8.33% { transform: translate(-4%, -7%); }
+  16.66% { transform: translate(-9%, 4%); }
+  25% { transform: translate(5%, -11%); }
+  33.33% { transform: translate(-6%, 9%); }
+  41.66% { transform: translate(8%, 2%); }
+  50% { transform: translate(-3%, -5%); }
+  58.33% { transform: translate(7%, 8%); }
+  66.66% { transform: translate(-8%, -2%); }
+  75% { transform: translate(3%, 10%); }
+  83.33% { transform: translate(-5%, -9%); }
+  91.66% { transform: translate(9%, -4%); }
+}
+
+/* O progresso real: a linha do topo enche conforme os marcos de carregamento chegam */
+.preroll__progress {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 2px;
+  background: var(--accent, var(--color-accent));
+  transform: scaleX(var(--p, 0));
+  transform-origin: left;
+  transition: transform var(--dur-long) var(--ease-enter);
+}
+
+.preroll__top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) max(var(--gut), env(safe-area-inset-right, 0px)) 0 max(var(--gut), env(safe-area-inset-left, 0px));
+}
+.preroll__brand {
+  font-family: var(--font-display);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 11;
+  font-size: var(--text-tagline);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-light);
+}
+.preroll__label,
+.preroll__tc {
+  font-size: var(--text-label);
+  line-height: var(--text-label--line-height);
+  letter-spacing: var(--text-label--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-light-faint);
+}
+.preroll__tc { font-variant-numeric: tabular-nums; }
+@media (max-width: 639px) {
+  .preroll__label { display: none; }
+}
+
+/* A película: a faixa passa por baixo da janela do projetor, 1 quadro por marco carregado */
+.preroll__reel {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% var(--cy);
+  /* Na saída a câmera entra no quadro: a película inteira cresce ao redor da janela. */
+  transition: transform var(--dur-long) var(--ease-enter);
+}
+.preroll[data-state="leaving"] .preroll__reel { transform: scale(6); }
+
+.preroll__film {
+  position: absolute;
+  top: var(--cy);
+  left: 50%;
+  display: flex;
+  gap: var(--gap);
+  padding: var(--band) var(--pad);
+  background: var(--color-room-1);
+  box-shadow: inset 0 1px 0 var(--color-hairline), inset 0 -1px 0 var(--color-hairline);
+  /* O avanço do quadro: rápido e seco, como a garra do projetor. Para no centro da janela. */
+  transform: translate(calc(-1 * (var(--pad) + var(--i, 0) * var(--pitch) + var(--fw) / 2)), -50%);
+  transition: transform var(--dur-medium) var(--ease-enter);
+}
+/* As perfurações: duas fileiras, em cima e embaixo, que andam junto com a película */
+.preroll__film::before,
+.preroll__film::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='12'%3E%3Crect x='7' y='2' width='12' height='8' rx='2.5' fill='black'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-size: 26px 12px;
+}
+.preroll__film::before { top: 9px; }
+.preroll__film::after { bottom: 9px; }
+
+.preroll__frame {
+  position: relative;
+  flex: none;
+  width: var(--fw);
+  height: var(--fh);
+  margin: 0;
+  background: var(--color-room-3);
+}
+/* Negativo: o quadro ainda não revelado está escuro e sem cor. Ao chegar à janela, revela. */
+.preroll__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.28) saturate(0.15) contrast(1.3);
+  transition: filter var(--dur-long) var(--ease-enter);
+}
+.preroll__frame.is-on img { filter: none; }
+
+/* A janela do projetor: 4 cantos que travam no quadro a cada avanço, como o visor de uma câmera */
+.preroll__gate {
+  position: absolute;
+  top: var(--cy);
+  left: 50%;
+  width: calc(var(--fw) + 22px);
+  height: calc(var(--fh) + 22px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.preroll__gate i {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 0 solid var(--accent, var(--color-accent));
+}
+.preroll__gate i:nth-child(1) { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; }
+.preroll__gate i:nth-child(2) { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; }
+.preroll__gate i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; }
+.preroll__gate i:nth-child(4) { right: 0; bottom: 0; border-right-width: 2px; border-bottom-width: 2px; }
+/* 2 nomes alternados: o mesmo nome 2 vezes seguidas não recomeçaria a travada */
+.preroll[data-beat="a"] .preroll__gate { animation: preroll-lock-a var(--dur-medium) var(--ease-enter) both; }
+.preroll[data-beat="b"] .preroll__gate { animation: preroll-lock-b var(--dur-medium) var(--ease-enter) both; }
+@keyframes preroll-lock-a {
+  from { transform: translate(-50%, -50%) scale(1.08); opacity: 0.4; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+@keyframes preroll-lock-b {
+  from { transform: translate(-50%, -50%) scale(1.08); opacity: 0.4; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* O título do filme da janela: as letras entram uma a uma, e o título anterior sai de uma vez */
+.preroll__titles {
+  position: absolute;
+  top: calc(var(--cy) + var(--fh) / 2 + 36px);
+  left: 50%;
+  display: grid;
+  width: min(90vw, 760px);
+  transform: translateX(-50%);
+  text-align: center;
+}
+.preroll[data-state="leaving"] .preroll__titles,
+.preroll[data-state="leaving"] .preroll__top,
+.preroll[data-state="leaving"] .preroll__seats {
+  opacity: 0;
+  transition: opacity var(--dur-medium) var(--ease-exit);
+}
+.preroll__title {
+  grid-area: 1 / 1;
+  font-family: var(--font-display);
+  font-optical-sizing: none;
+  font-variation-settings: "opsz" 24;
+  font-size: var(--text-display-md);
+  font-weight: 600;
+  line-height: var(--text-display-md--line-height);
+  letter-spacing: var(--text-display-md--letter-spacing);
+  color: var(--color-light);
+  text-wrap: balance;
+  opacity: 0;
+  transition: opacity var(--dur-short) var(--ease-exit);
+}
+.preroll__title.is-current { opacity: 1; }
+/* No carregamento as letras só correm quando o título é o atual */
+.preroll__title .ch { animation: none; opacity: 0; }
+.preroll__title.is-current .ch {
+  animation: letter-in var(--dur-medium) var(--ease-enter) both;
+  animation-delay: calc(min(var(--c), 24) * var(--preroll-letter));
+}
+/* A marca do topo entra assim que a página abre */
+.preroll__brand .ch {
+  animation: letter-in var(--dur-long) var(--ease-enter) both;
+  animation-delay: calc(var(--c) * var(--letter-stagger));
+}
+
+/* A plateia na beira de baixo, assistindo à película passar */
+.preroll__seats {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: clamp(88px, 17svh, 168px);
+}
+
+/* O botão de pausa só existe com a cena 3D: na versão 2D não há animação ambiente. */
+.motion-toggle { display: none; }
+html[data-stage="3d"] .motion-toggle { display: inline-flex; }
+
+/* Palco 3D: a abertura fica transparente e o pôster/fundo em HTML dão lugar aos da cena. */
+html[data-stage="3d"] [data-hero] { background: transparent; }
+html[data-stage="3d"] [data-hero-2d] { visibility: hidden; }
+
+/* Filme em foco no palco: entra subindo 12px, sem atrasar a leitura. */
+.stage-item {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity var(--dur-medium) var(--ease-exit), transform var(--dur-medium) var(--ease-exit);
+}
+.stage-item.is-on {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-duration: var(--dur-long);
+  transition-timing-function: var(--ease-enter);
+  transition-delay: var(--stagger);
+}
+.stage-bar {
+  background: var(--accent, var(--color-accent));
+  transition: transform var(--dur-long) var(--ease-enter);
+}
+
+/* Painel do filme (dialog nativo). Abre e fecha sem tela branca: só opacity e transform. */
+dialog.movie-panel::backdrop {
+  background: rgb(0 0 0 / 0.82);
+  opacity: 0;
+  transition: opacity var(--dur-long) var(--ease-enter);
+}
+dialog.movie-panel[data-state="open"]::backdrop { opacity: 1; }
+dialog.movie-panel[data-state="closing"]::backdrop { opacity: 0; }
+
+dialog.movie-panel[data-state] {
+  opacity: 0;
+  /* Cresce a partir do ponto onde o pôster parou, no centro da tela. */
+  transform: scale(0.92) translateY(24px);
+  transition: opacity var(--dur-medium) var(--ease-enter), transform var(--dur-long) var(--ease-enter);
+}
+dialog.movie-panel[data-state="open"] { opacity: 1; transform: none; }
+/* O botão de fechar é fixo no topo: o foco dentro do painel nunca para debaixo dele. */
+dialog.movie-panel :is(a, button, iframe, h3) { scroll-margin-top: 80px; }
+
+dialog.movie-panel[data-state="closing"] {
+  opacity: 0;
+  transform: scale(0.96) translateY(16px);
+  transition: opacity var(--dur-medium) var(--ease-exit), transform var(--dur-medium) var(--ease-exit);
+}
+html:has(dialog[open]) { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .letters .ch, .preroll__title .ch, .preroll__brand .ch { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .poster-card:hover, .poster-card:hover .poster-frame img { transform: none; }
+  dialog.movie-panel[data-state] { opacity: 1; transform: none; }
+  dialog.movie-panel::backdrop { opacity: 1; }
 }
