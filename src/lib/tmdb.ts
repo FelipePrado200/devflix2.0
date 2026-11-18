@@ -46,12 +46,24 @@ export class TmdbMissingToken extends Error {
   }
 }
 
+/**
+ * Painéis de hospedagem costumam guardar o valor com aspas, espaço, quebra de linha ou o prefixo
+ * "Bearer " colado junto. Qualquer um desses vira um 401 difícil de achar, então limpamos aqui.
+ */
+function readToken(): string {
+  return (process.env.TMDB_TOKEN ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .trim();
+}
+
 export function hasToken() {
-  return Boolean(process.env.TMDB_TOKEN);
+  return readToken().length > 0;
 }
 
 async function tmdb<T>(path: string, params: Record<string, string | number> = {}): Promise<T> {
-  const token = process.env.TMDB_TOKEN;
+  const token = readToken();
   if (!token) throw new TmdbMissingToken();
 
   const url = new URL(API + path);
