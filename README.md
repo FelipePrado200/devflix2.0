@@ -1,43 +1,100 @@
+<div align="center">
+
 # Devflix
 
-Catálogo de filmes com dados do [TMDB](https://www.themoviedb.org/), em que a rolagem é a linha do
-tempo de um filme. Uma sala de projeção escura, com plateia, feixe de projetor e pôsteres pendurados,
-conta a história em 3D. O HTML carrega toda a informação.
+**A rolagem é a linha do tempo de um filme.**
+Um catálogo com dados do [TMDB](https://www.themoviedb.org/), contado por uma cena 3D numa sala de projeção.
 
-## A ideia em 3 leis
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-estrito-3178C6?logo=typescript&logoColor=white)
+![three.js](https://img.shields.io/badge/three.js-R3F-000000?logo=threedotjs&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)
+![GSAP](https://img.shields.io/badge/GSAP-ScrollTrigger-88CE02?logo=greensock&logoColor=black)
 
-1. **O 3D conta a história, o HTML carrega a informação.** Todo texto, nota, avaliação e link existe
-   no DOM, indexável e legível por leitor de tela. O canvas nunca é a única fonte de nada.
+<img src="docs/img/abertura.jpg" alt="Abertura do Devflix: o filme em destaque com o pôster pendurado na sala de projeção" width="100%">
+
+</div>
+
+## A ideia
+
+Uma sala de cinema escura, com plateia, feixe de projetor e pôsteres pendurados como caixas de luz. Ao
+rolar a página, a câmera atravessa a sala e para em cada filme. O 3D conta a história. Toda a informação
+fica no HTML.
+
+### As 3 leis do projeto
+
+1. **O 3D conta a história, o HTML carrega a informação.** Todo texto, nota, avaliação e link existe no
+   DOM, indexável e legível por leitor de tela. O canvas nunca é a única fonte de nada.
 2. **Nada de dado inventado.** Nota, autor, citação e número de votos vêm do TMDB. Filme sem resenha
    mostra só a nota e os votos.
 3. **A chave do TMDB fica no servidor.** `TMDB_TOKEN`, nunca com prefixo `NEXT_PUBLIC_`, nunca numa
    requisição do navegador.
 
+## Um passeio pela sessão
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/carregamento.jpg" alt="Tela de carregamento: uma película de 35 mm com os pôsteres passando pela janela do projetor"></td>
+    <td width="50%"><img src="docs/img/em-cartaz.jpg" alt="Seção Em cartaz: a câmera diante do pôster em foco, com a plateia ao fundo"></td>
+  </tr>
+  <tr>
+    <td><b>Carregamento.</b> Uma película de 35 mm. Cada marco real de carga (fontes, cena, pôster, fundo) avança um quadro.</td>
+    <td><b>Em cartaz.</b> A câmera percorre o corredor da sala e para em cada pôster. A cor de destaque vem do próprio pôster.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/mais-bem-avaliados.jpg" alt="Seção Mais bem avaliados: o 3º lugar com nota 8,8 e número de votos"></td>
+    <td><img src="docs/img/publico.jpg" alt="Seção O que o público diz: trecho de resenha do TMDB com autor, nota e link"></td>
+  </tr>
+  <tr>
+    <td><b>Mais bem avaliados.</b> A tira de pôsteres desce do 1º ao último lugar, sempre com a nota e os votos.</td>
+    <td><b>O que o público diz.</b> Resenhas reais do TMDB, no idioma original, com autor, nota e o link para o texto completo.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/generos.jpg" alt="Seção Por gênero: quatro pôsteres do gênero Drama sob o feixe do projetor"></td>
+    <td><img src="docs/img/creditos.jpg" alt="Créditos finais: plateia vazia com pipoca, logo e aviso do TMDB e o botão Rever a sessão"></td>
+  </tr>
+  <tr>
+    <td><b>Por gênero.</b> Uma parada da câmera para cada gênero, com poucos filmes à vista.</td>
+    <td><b>Créditos.</b> "Fim", os créditos sobem com a rolagem e a sessão fecha com a atribuição do TMDB.</td>
+  </tr>
+</table>
+
+### No celular
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/img/celular-abertura.jpg" alt="Abertura no celular"></td>
+    <td width="33%"><img src="docs/img/celular-em-cartaz.jpg" alt="Em cartaz no celular"></td>
+    <td width="33%"><img src="docs/img/celular-creditos.jpg" alt="Créditos no celular"></td>
+  </tr>
+</table>
+
+O layout é pensado para 390 px: alvos de toque de pelo menos 44 px, menu em disclosure e a mesma cena em
+uma versão mais leve.
+
 ## O que a página tem
 
-- **Cena 3D** com React Three Fiber: plateia instanciada (cadeiras, baldes de pipoca e luzes de
-  corredor em 3 draw calls), feixe de projetor com poeira, pôsteres como caixas de luz, profundidade
-  de campo, grão de filme e vinheta.
-- **Seções**: abertura, Em cartaz, Mais bem avaliados, O que o público diz e Por gênero. A câmera
-  percorre a sala conforme a rolagem.
-- **Tela de carregamento** em película de 35 mm. Cada marco real de carregamento (fontes, cena, pôster,
-  fundo) avança um quadro. Aparece 1 vez por sessão.
-- **Letras que entram uma a uma** nos títulos, com o nome acessível preservado.
-- **Cabeçalho flutuante** com a cena atual marcada e o progresso da rolagem.
-- **Créditos finais** com rolagem comandada e o aviso de atribuição do TMDB.
-- **Qualidade adaptável**: um governador mede os quadros por segundo e sobe ou desce o nível de
+- **Cena 3D** com React Three Fiber. A plateia (cadeiras, baldes de pipoca e luzes de corredor) é
+  instanciada e custa 3 draw calls. Feixe de projetor com poeira, pôsteres como caixas de luz,
+  profundidade de campo, grão de filme e vinheta.
+- **Luz que não atrapalha a leitura.** A plateia escurece onde passa o texto em HTML, para o contraste
+  não depender de onde a pipoca ficou.
+- **Letras que entram uma a uma** nos títulos, mantendo o nome acessível inteiro para leitor de tela.
+- **Cabeçalho flutuante** que marca a cena atual e mostra o progresso da rolagem.
+- **Qualidade adaptável.** Um governador mede os quadros por segundo e sobe ou desce o nível de
   qualidade, com histerese (`src/scene/quality.ts`, com testes).
-- **Acessibilidade e fallback**: com `prefers-reduced-motion`, sem WebGL ou sem JavaScript, a página
-  usa seções 2D completas, sem câmera e sem canvas.
+- **Acessibilidade e fallback.** Com `prefers-reduced-motion`, sem WebGL ou sem JavaScript, a página usa
+  seções 2D completas, sem câmera e sem canvas.
 
 ## Tecnologia
 
 | Camada | Escolha |
 |---|---|
 | Framework | Next.js 15 (App Router), React 19, TypeScript estrito |
-| 3D | three.js, React Three Fiber, drei, postprocessing |
-| Movimento | GSAP com ScrollTrigger, Lenis (um único controle de rolagem) |
-| Estilo | Tailwind CSS 4, tokens em OKLCH |
+| 3D | three.js, React Three Fiber, drei, postprocessing, shaders GLSL próprios |
+| Movimento | GSAP com ScrollTrigger e Lenis (um único controle de rolagem) |
+| Estilo | Tailwind CSS 4, tokens de cor em OKLCH |
 | Fontes | Bodoni Moda (títulos) e Jost (texto), via `next/font` |
 | Dados | API do TMDB, lida só no servidor |
 
@@ -119,6 +176,7 @@ O custo de cada efeito, medido num notebook com RTX 3050, está em [docs/efeitos
 
 ## Créditos
 
-Dados, pôsteres, notas e resenhas vêm do TMDB.
+Dados, pôsteres, notas e resenhas vêm do [TMDB](https://www.themoviedb.org/). Os pôsteres pertencem aos
+seus respectivos detentores de direitos.
 
 > This product uses the TMDB API but is not endorsed or certified by TMDB.
